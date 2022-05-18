@@ -199,7 +199,7 @@ int main() {
 
 
     printf("LSM303AGR [acc/mg]:  %6f, %6f\r\n", acc_x, acc_y);
-    printf("LSM303AGR [acc/mg]:  %6f, %6f\r\n", v_x, v_y);
+    printf("LSM303AGR [v(m/s)]:  %6f, %6f\r\n", v_x, v_y);
    
    ThisThread::sleep_for(1000);
 
