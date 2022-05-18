@@ -198,7 +198,6 @@ int main() {
     acc_prec_y=acc_y;
 
 
-
     printf("LSM303AGR [acc/mg]:  %6f, %6f\r\n", acc_x, acc_y);
 
    ThisThread::sleep_for(1000);
