@@ -46,6 +46,14 @@ void Rpm3()
 double get_speed
 
 
+//Restituisce il valore della velocità dagli rpm
+float converti_rpm(int counter){
+    float raggio;
+    return raggio*(2*PI/60)*counter;
+
+
+}
+
 
 int main(){
     sensore3.rise(&Rpm3);
@@ -56,14 +64,21 @@ int main(){
     while (1) {          // wait around, interrupts will interrupt this!
        // led = !led
        ThisThread::sleep_for(250ms);
-       counter=counter*12;
-       counter1=counter1*12;
-       counter2=counter2*12;
-       counter3=counter3*12;
-        printf("%d rpm  \t", counter);
-        printf("%d rpm1 \t", counter1);
-        printf("%d rpm2 \t", counter2);
-        printf("%d rpm3 \n", counter3);
+
+       //velocità lineare delle singole ruote
+       float vel1=converti_rpm(counter*12)
+       float vel2=converti_rpm(counter1*12)
+       float vel3=converti_rpm(counter2*12)
+       float vel4=converti_rpm(counter3*12)
+
+       //media delle velocità
+       float vel=(vel1+vel2+ vel3 + vel4)/4;
+
+        printf("%d rpm  \t", counter*12);
+        printf("%d rpm1 \t", counter1*12);
+        printf("%d rpm2 \t", counter2*12);
+        printf("%d rpm3 \n", counter3*12);
+        printf("v[m/s]: %f\n",vel)
         counter3=0;
         counter2=0;
         counter1=0;
