@@ -195,7 +195,7 @@
             //printf("%d rpm2 \t", counter2*12);
             //printf("%d rpm3 \n", counter3*12);
             //stampa la velocità
-            printf("v[m/s]: %s\n",print_double(buffer3, vel));
+            printf("v[m/s]: %f\n",vel);
             counter3=0;
             counter2=0;
             counter1=0;
@@ -238,15 +238,9 @@
             acc_prec_x=acc_x;
             acc_prec_y=acc_y;
 
-            if(acc_x<0 && acc_y<0){
-                printf("LSM303AGR [acc/g]:  -%7s, -%7s\n", print_double(buffer1, abs(acc_x)), print_double(buffer2, abs(acc_y)));
-            }
-            else if(acc_x<0){
-                printf("LSM303AGR [acc/g]:  -%7s, %7s\n", print_double(buffer1, abs(acc_x)), print_double(buffer2, acc_y));
-            }
-            else{
-                printf("LSM303AGR [acc/g]:  %7s, -%7s\n", print_double(buffer1, acc_x), print_double(buffer2, abs(acc_y)));
-            }
+            
+            printf("LSM303AGR [acc/g]:  %f, %f\n", acc_x, acc_y);
+            
             // printf("LSM303AGR [v(m/s)]:  %6f, %6f\r\n", v_x, v_y);
             ThisThread::sleep_for(1000);
 
