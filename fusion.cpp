@@ -2,9 +2,9 @@
     /* Includes */
     #include "mbed.h"
     #include "XNucleoIKS01A2.h"
+    #include <cmath>
     #include <iostream>
     #include <string>
-    #include <math.h>
     #define PI 2*acos(0.0f)
     #include <chrono>
     const int fori = 20;
@@ -20,6 +20,7 @@
     //velocità
     float v_x=0;
     float v_y=0;
+    float vel_prec=0;
     //l'angolo di inclinzione si suppone costante quindi il
     //disturbo dovrà rimanere lo stesso
     double disturbo_x=0;
@@ -41,8 +42,7 @@
 
     //calcola il disturbo sulla base dell'angolo d'inclinazione
     double calcola_disturbo(float acc){
-        double angolo_inclinazione=(PI/2)-acos(acc);
-        return (acc)*cos(angolo_inclinazione);
+        return sqrt(1-pow(acc, 2));
     }
 
 
@@ -149,7 +149,10 @@
     }
 
 
-
+    //calcola l'angolo di sterzata consocendo accelerazione x e y
+    float angolo_sterzata(float acc_x,float acc_y){
+        return atan2(acc_y, acc_x); //da verificare
+    }
 
    
 
@@ -181,25 +184,7 @@
             // led = !led
             ThisThread::sleep_for(250ms);
 
-            //velocità lineare delle singole ruote
-            float vel1=converti_rpm(counter*12);
-            float vel2=converti_rpm(counter1*12);
-            float vel3=converti_rpm(counter2*12);
-            float vel4=converti_rpm(counter3*12);
-
-            //media delle velocità
-            float vel=(vel1+vel2)/2;
-
-                //printf("%d rpm  \t", counter*12);
-            //printf("%d rpm1 \t", counter1*12);
-            //printf("%d rpm2 \t", counter2*12);
-            //printf("%d rpm3 \n", counter3*12);
-            //stampa la velocità
-            printf("v[m/s]: %f\n",vel);
-            counter3=0;
-            counter2=0;
-            counter1=0;
-            counter=0;
+           
 
 
             printf("\r\n");
@@ -241,6 +226,39 @@
             
             printf("LSM303AGR [acc/g]:  %f, %f\n", acc_x, acc_y);
             
+
+            float angolo_ster=angolo_sterzata(acc_x, acc_y);
+
+             //velocità lineare delle singole ruote
+            float vel1=converti_rpm(counter*12);
+            float vel2=converti_rpm(counter1*12);
+            float vel3=converti_rpm(counter2*12);
+            float vel4=converti_rpm(counter3*12);
+
+            //media delle velocità (risultante)
+            float vel=(vel1+vel2+vel3+vel4)/4;
+            
+            vel=filtro_kalman(vel_prec,0.02,0.03,vel);
+
+            //la velocità attuale diventa quella precedente
+            vel_prec=vel;
+
+
+            //calcola le velocità x e y conoscendo l'angolo di sterzata
+            float vel_x=vel*cos(angolo_ster);
+            float vel_y =vel*sin(angolo_ster);
+
+            //printf("%d rpm  \t", counter*12);
+            //printf("%d rpm1 \t", counter1*12);
+            //printf("%d rpm2 \t", counter2*12);
+            //printf("%d rpm3 \n", counter3*12);
+            //stampa la velocità
+            printf("v_x[m/s]: %f v_y[m/s]: %f",vel_x,vel_y);
+            counter3=0;
+            counter2=0;
+            counter1=0;
+            counter=0;
+
             // printf("LSM303AGR [v(m/s)]:  %6f, %6f\r\n", v_x, v_y);
             ThisThread::sleep_for(1000);
 
