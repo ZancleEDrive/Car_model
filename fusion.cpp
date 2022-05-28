@@ -38,7 +38,7 @@
     
     /* Retrieve the composing elements of the expansion board */
     static LSM303AGRAccSensor *accelerometer = mems_expansion_board->accelerometer;
-    
+    static LSM303AGRMagSensor *magnetometer = mems_expansion_board->magnetometer;
 
     //calcola il disturbo sulla base dell'angolo d'inclinazione
     double calcola_disturbo(float acc){
@@ -149,10 +149,6 @@
     }
 
 
-    //calcola l'angolo di sterzata consocendo accelerazione x e y
-    float angolo_sterzata(float acc_x,float acc_y){
-        return atan2(acc_y, acc_x); //da verificare
-    }
 
    
 
@@ -165,18 +161,23 @@
         uint8_t id;
         float value1, value2;
         char buffer1[32], buffer2[32],buffer3[32];
-        int32_t axes[3];
+        int32_t axes_acc[3];
+        int32_t axes_mag[3];
     
-
+        //dati accelerometro
         accelerometer->enable();
         accelerometer->read_id(&id);
-        accelerometer->get_x_axes(axes);
+        accelerometer->get_x_axes(axes_acc);
 
- 
+        //dati magnetometro
+        magnetometer->enable();
+        magnetometer->read_id(&id);
+        magnetometer->get_m_axes(axes_mag);
+
         //calcola il disturbo all'inzio sapendo che il valore
         //al tempo 0 segnato dall'accelerometro deve essere 0.
-        disturbo_x=calcola_disturbo(((float)axes[0])/1000);
-        disturbo_y=calcola_disturbo(((float) axes[1])/1000);
+        disturbo_x=calcola_disturbo(((float)axes_acc[0])/1000);
+        disturbo_y=calcola_disturbo(((float) axes_acc[1])/1000);
 
         Timer clock;
         while(1) {
@@ -195,7 +196,7 @@
             //Parte il timer per vedere il tempo necessario per la misurazione
         // auto startTime_misura = chrono::steady_clock::now();
 
-            accelerometer->get_x_axes(axes);
+            accelerometer->get_x_axes(axes_acc);
 
             //fine tempo
             //auto endTime_misura =  chrono::steady_clock::now();
@@ -204,9 +205,9 @@
 
             //Prende la misura dell'accelerometro e la porta in g
             //per la componente x
-            acc_x= (((float)axes[0])/1000);
+            acc_x= (((float)axes_acc[0])/1000);
             //per la componente y
-            acc_y = (((float)axes[1])/1000);
+            acc_y = (((float)axes_acc[1])/1000);
 
             //rimuove il disturbo
             acc_x=acc_x-disturbo_x;
@@ -227,7 +228,6 @@
             printf("LSM303AGR [acc/g]:  %f, %f\n", acc_x, acc_y);
             
 
-            float angolo_ster=angolo_sterzata(acc_x, acc_y);
 
              //velocità lineare delle singole ruote
             float vel1=converti_rpm(counter*12);
