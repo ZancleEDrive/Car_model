@@ -244,16 +244,13 @@
             vel_prec=vel;
 
 
-            //calcola le velocità x e y conoscendo l'angolo di sterzata
-            float vel_x=vel*cos(angolo_ster);
-            float vel_y =vel*sin(angolo_ster);
 
             //printf("%d rpm  \t", counter*12);
             //printf("%d rpm1 \t", counter1*12);
             //printf("%d rpm2 \t", counter2*12);
             //printf("%d rpm3 \n", counter3*12);
             //stampa la velocità
-            printf("v_x[m/s]: %f v_y[m/s]: %f",vel_x,vel_y);
+            printf("v[m/s]: %f",vel);
             counter3=0;
             counter2=0;
             counter1=0;
