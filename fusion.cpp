@@ -5,49 +5,40 @@
     #include <cmath>
     #include <iostream>
     #include <string>
-    #define PI 2*acos(0.0f)
+    #include "src/headers/model.h"
     #include <chrono>
+    
     const int fori = 20;
-    int counter = 0;
-    int counter1 = 0;
-    int counter2 = 0;
-    int counter3 = 0;
-    //accelerazione
-    float acc_x=0;
-    float acc_y=0;
-    float acc_prec_x=0;
-    float acc_prec_y=0;  
-    //velocità
-    float v_x=0;
-    float v_y=0;
+
+    int counters[4] {0};
+    float acc[2] {0};
+    float acc_prec[2]{0};
+    float vel[2]{0};
+    double disturbo[2]{0};
+    float vel=0;
     float vel_prec=0;
+
     //l'angolo di inclinzione si suppone costante quindi il
     //disturbo dovrà rimanere lo stesso
-    double disturbo_x=0;
-    double disturbo_y=0;
 
-    InterruptIn sensore(ARDUINO_UNO_D3);
-    InterruptIn sensore1(ARDUINO_UNO_D2);
-    InterruptIn sensore2(ARDUINO_UNO_D6);
-    InterruptIn sensore3(ARDUINO_UNO_D13);
-    DigitalOut led1(LED1);
-    DigitalOut led2(LED2);
-    DigitalOut led3(LED3);
-    /* Instantiate the expansion board */
+    InterruptIn sensori[4] = {
+        new InterruptIn (ARDUINO_UNO_D3),
+        new InterruptIn (ARDUINO_UNO_D2),
+        new InterruptIn (ARDUINO_UNO_D6),
+        new InterruptIn (ARDUINO_UNO_D13)
+    };
+    DigitalOut led[3] = {
+        new DigitalOut (LED1),    
+        new DigitalOut (LED2),    
+        new DigitalOut (LED3)
+    };
+
+   /* Instantiate the expansion board */
     static XNucleoIKS01A2 *mems_expansion_board = XNucleoIKS01A2::instance(D14, D15, D4, D5);
     
     /* Retrieve the composing elements of the expansion board */
     static LSM303AGRAccSensor *accelerometer = mems_expansion_board->accelerometer;
     static LSM303AGRMagSensor *magnetometer = mems_expansion_board->magnetometer;
-
-    //calcola il disturbo sulla base dell'angolo d'inclinazione
-    double calcola_disturbo(float acc){
-        return sqrt(1-pow(acc, 2));
-    }
-
-
-
-
 
     /* Helper function for printing floats & doubles */
     static char *print_double(char* str, double v, int decimalDigits=2){
@@ -88,76 +79,30 @@
     //calcola la velocità integrando il valore dell'accelerazione, 
     //rispetto solamente al tempo trascorso per effettuare la misura
     float calcola_velocita(float acc,float tempo){
-        float vel=(acc*9.80082)*(tempo/1000);
-        return vel;
+        return (acc*9.80082)*(tempo/1000);
     }
 
 
     float filtro_kalman(float stima,float errore, float errore_misura,float misura){
-    float KG=0;
-    float errore_stima=errore;
-    for (int i=0;i<1000;i++){  
-        //Guadagno
-        KG = errore_stima/(errore_stima+errore_misura);
-        //stima     
-        stima = stima+(KG*(misura-stima)); 
-        //errore stima x
-        errore_stima = (1-KG)* errore_stima;   
-        
-    }
+        float KG=0;
+        float errore_stima=errore;
+        for (int i=0;i<1000;i++){  
+            //Guadagno
+            KG = errore_stima/(errore_stima+errore_misura);
+            //stima     
+            stima = stima+(KG*(misura-stima)); 
+            //errore stima x
+            errore_stima = (1-KG)* errore_stima;   
+            
+        }
         return stima;
-    }
-
-
-
-
-    void Rpm()
-    {
-        led1 = !led1;
-        counter++;
-    }
-
-    void Rpm1()
-    {
-        led2 = !led2;
-        counter1++;
-    }
-
-
-    void Rpm2()
-    {
-        led3 = !led3;
-        counter2++;
-    }
-
-
-
-    void Rpm3()
-    {
-        counter3++;
     }
 
     double get_speed;
 
-
-    //Restituisce il valore della velocità dagli rpm
-    float converti_rpm(int counter){
-        float raggio=0.0575;
-        return raggio*(2*PI/60)*counter;
-
-
-    }
-
-
-
-   
-
-
     int main() {
-        sensore3.rise(&Rpm3);
-        sensore2.rise(&Rpm2);
-        sensore1.rise(&Rpm1);
-        sensore.rise(&Rpm);  
+    
+        Ruota ruote[4];
         uint8_t id;
         float value1, value2;
         char buffer1[32], buffer2[32],buffer3[32];
@@ -176,8 +121,97 @@
 
         //calcola il disturbo all'inzio sapendo che il valore
         //al tempo 0 segnato dall'accelerometro deve essere 0.
-        disturbo_x=calcola_disturbo(((float)axes_acc[0])/1000);
-        disturbo_y=calcola_disturbo(((float) axes_acc[1])/1000);
+        disturbo_x=calcola_disturbo(((float)axes_acc[X])/1000);
+        disturbo_y=calcola_disturbo(((float)axes_acc[Y])/1000);
+
+
+        for (int i = 0; i < 4; ++i)
+            ruote[i].sensore.rise(&(ruote[i].rpm()));
+
+        Timer clock;
+        while(1) {
+
+            ThisThread::sleep_for(250ms);     
+            printf("\r\n");
+            printf("---\r\n");
+
+            //Parte il timer per vedere il tempo necessario per la misurazione
+            /**************************************************/
+            auto startTime_misura = chrono::system_clock::now();
+            /********************DA VEDERE*********************/
+
+            accelerometer->get_x_axes(axes_acc);
+
+            //fine tempo
+            /**************************************************/
+            auto endTime_misura = chrono::system_clock::now();
+            /********************DA VEDERE*********************/
+
+            //tempo trascorso
+            /**************************************************/
+            auto elapsedTime_misura = chrono::duration_cast<chrono::milliseconds>(endTime_misura - startTime_misura).count();
+            /********************DA VEDERE*********************/
+
+            //Prende la misura dell'accelerometro e la porta in g
+            //per la componente x
+            acc[X]= (((float)aaccelerometer->get_x_axe(sxes_acc))/1000);
+            //per la componente y
+            acc[Y] = (((float)accelerometer->get_x_axes(axes_acc))/1000);
+
+            //rimuove il disturbo
+            acc[X]=acc[X]-disturbo[X];
+            acc[Y]=acc[Y]-disturbo[Y];
+
+            //applica il filtro di Kalman all'accelerazione
+            acc[X]=filtro_kalman(acc_prec[X],0.02,0.03,acc[X]);
+            acc[Y]=filtro_kalman(acc_prec[Y],0.01,0.01,ac[Y]);
+
+            //calcola la velocità
+            //v_x=calcola_velocita(acc_x,elapsedTime_misura);
+            //v_y=calcola_velocita(acc_y,elapsedTime_misura);
+
+            acc_prec[X]=acc[X];
+            acc_prec[Y]=acc[Y];
+
+            printf("LSM303AGR [acc/g]:  %f, %f\n", acc_x, acc_y);
+            vel = Ruota::media_vel(ruote, size(ruote));
+            vel=filtro_kalman(vel_prec,0.02,0.03,vel);
+            vel_prec = vel;
+
+            for (Ruota tmp : ruote)
+                tmp.reset_counter();
+
+            printf("v[m/s]: %f",vel);
+
+            ThisThread::sleep_for(1000);
+
+    }
+
+   
+
+/*
+    int main() {
+  
+        uint8_t id;
+        float value1, value2;
+        char buffer1[32], buffer2[32],buffer3[32];
+        int32_t axes_acc[3];
+        int32_t axes_mag[3];
+    
+        //dati accelerometro
+        accelerometer->enable();
+        accelerometer->read_id(&id);
+        accelerometer->get_x_axes(axes_acc);
+
+        //dati magnetometro
+        magnetometer->enable();
+        magnetometer->read_id(&id);
+        magnetometer->get_m_axes(axes_mag);
+
+        //calcola il disturbo all'inzio sapendo che il valore
+        //al tempo 0 segnato dall'accelerometro deve essere 0.
+        disturbo_x=calcola_disturbo(((float)axes_acc[X])/1000);
+        disturbo_y=calcola_disturbo(((float) axes_acc[Y])/1000);
 
         Timer clock;
         while(1) {
@@ -205,9 +239,9 @@
 
             //Prende la misura dell'accelerometro e la porta in g
             //per la componente x
-            acc_x= (((float)axes_acc[0])/1000);
+            acc_x= (((float)aaccelerometer->get_x_axe(sxes_acc))/1000);
             //per la componente y
-            acc_y = (((float)axes_acc[1])/1000);
+            acc_y = (((float)accelerometer->get_x_axes(axes_acc))/1000);
 
             //rimuove il disturbo
             acc_x=acc_x-disturbo_x;
@@ -230,7 +264,7 @@
 
 
              //velocità lineare delle singole ruote
-            float vel1=converti_rpm(counter*12);
+            float vel1=converti_DD
             float vel2=converti_rpm(counter1*12);
             float vel3=converti_rpm(counter2*12);
             float vel4=converti_rpm(counter3*12);
@@ -263,4 +297,4 @@
     }
 
 
-
+*/
