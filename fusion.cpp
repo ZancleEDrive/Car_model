@@ -167,7 +167,7 @@
         else if(Hy==0 && Hx >0){
             result=0.0;
         }
-        return result-declinazione_magnetica-deviazione_magnetica;
+        return result-declinazione_magnetica;
     }
 
    
@@ -194,10 +194,16 @@
         magnetometer->read_id(&id);
         magnetometer->get_m_axes(axes_mag);
 
+
+        //calcola la direzione all'inizio per creare il sistema di riferimento
+        float direzione_riferimento=angolo_direzione(axes_mag[0], axes_mag[1]);
+
         //calcola il disturbo all'inzio sapendo che il valore
         //al tempo 0 segnato dall'accelerometro deve essere 0.
         disturbo_x=calcola_disturbo(((float)axes_acc[0])/1000);
         disturbo_y=calcola_disturbo(((float) axes_acc[1])/1000);
+
+        float angolo_sterzata;
 
         Timer clock;
         while(1) {
@@ -205,17 +211,17 @@
             // led = !led
             ThisThread::sleep_for(250ms);
 
-           
-
-
-            printf("\r\n");
-
-        
-            printf("---\r\n");
+            //prende la misura del magnetometro
+            magnetometer->get_m_axes(axes_mag);
+            //calcola l'angolo di sterzata come differenza tra la direzione
+            //appena calcolata e quella di riferimento
+            angolo_sterzata=angolo_direzione(axes_mag[0],axes_mag[1])-direzione_riferimento;
+            
 
             //Parte il timer per vedere il tempo necessario per la misurazione
-        // auto startTime_misura = chrono::steady_clock::now();
+            // auto startTime_misura = chrono::steady_clock::now();
 
+            //prende la misura dell'accelerometro
             accelerometer->get_x_axes(axes_acc);
 
             //fine tempo
@@ -244,12 +250,8 @@
             acc_prec_x=acc_x;
             acc_prec_y=acc_y;
 
-            
-            printf("LSM303AGR [acc/g]:  %f, %f\n", acc_x, acc_y);
-            
 
-
-             //velocità lineare delle singole ruote
+            //velocità lineare delle singole ruote
             float vel1=converti_rpm(counter*12);
             float vel2=converti_rpm(counter1*12);
             float vel3=converti_rpm(counter2*12);
@@ -257,20 +259,21 @@
 
             //media delle velocità (risultante)
             float vel=(vel1+vel2+vel3+vel4)/4;
-            
+            //filtra la velocità
             vel=filtro_kalman(vel_prec,0.02,0.03,vel);
-
             //la velocità attuale diventa quella precedente
             vel_prec=vel;
-
-
 
             //printf("%d rpm  \t", counter*12);
             //printf("%d rpm1 \t", counter1*12);
             //printf("%d rpm2 \t", counter2*12);
             //printf("%d rpm3 \n", counter3*12);
-            //stampa la velocità
+
+
+            //printing dati
+            printf("Angolo sterzata (°): %f",angolo_sterzata);
             printf("v[m/s]: %f",vel);
+            printf("LSM303AGR [acc/g]:  %f, %f\n", acc_x, acc_y);
             counter3=0;
             counter2=0;
             counter1=0;
