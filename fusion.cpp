@@ -26,6 +26,10 @@
     double disturbo_x=0;
     double disturbo_y=0;
 
+    float deviazione_magnetica=0;
+    float declinazione_magnetica=3.9;
+
+
     InterruptIn sensore(ARDUINO_UNO_D3);
     InterruptIn sensore1(ARDUINO_UNO_D2);
     InterruptIn sensore2(ARDUINO_UNO_D6);
@@ -148,7 +152,23 @@
 
     }
 
-
+    //calcola la rotta (direzione rispetto al nord magnetico)
+    float angolo_direzione(int Hx, int Hy){
+        float result;
+        if(Hy>0){
+            result=90-atan2(Hx,Hy)*180/PI;
+        }
+        else if (Hy<0){
+            result= 270- atan2(Hx, Hy)*180/PI;
+        }
+        else if(Hy==0 && Hx<0){
+            result=180.0;
+        }
+        else if(Hy==0 && Hx >0){
+            result=0.0;
+        }
+        return result-declinazione_magnetica-deviazione_magnetica;
+    }
 
    
 
