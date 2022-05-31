@@ -1,8 +1,7 @@
 #include "mbed.h"
-#define X 0
-#define Y 1
-#define Z 2
 #define PI 2*acos(0.0f)
+
+enum class axes {X, Y, Z}
 
 #ifndef RUOTA_H
 #define RUOTA_H

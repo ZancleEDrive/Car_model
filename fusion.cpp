@@ -8,13 +8,14 @@
     #include "src/headers/model.h"
     #include <chrono>
     
+    using enum axes;
     const int fori = 20;
 
     int counters[4] {0};
     float acc[2] {0};
-    float acc_prec[2]{0};
-    float vel[2]{0};
-    double disturbo[2]{0};
+    float acc_prec[2] {0};
+    float vel[2] {0};
+    double disturbo[2] {0};
     float vel=0;
     float vel_prec=0;
 
@@ -41,40 +42,36 @@
     static LSM303AGRMagSensor *magnetometer = mems_expansion_board->magnetometer;
 
     /* Helper function for printing floats & doubles */
-    static char *print_double(char* str, double v, int decimalDigits=2){
+    char *print_double(char* str, double v, int decimalDigits=2){
         int i = 1;
-        int intPart, fractPart;
-        int len;
-        char *ptr;
+        int fractPart;
+        char *ptr = NULL;
         
         /* prepare decimal digits multiplicator */
-        for (;decimalDigits!=0; i*=10, decimalDigits--);
-        
+        //for (;decimalDigits!=0; i*=10, decimalDigits--);
+       
+        while(decimalDigits-- != 0)
+            i*=10;
+
         /* calculate integer & fractinal parts */
-        intPart = (int)v;
-        fractPart = (int)((v-(double)(int)v)*i);
+        fractPart = (int)((v-(int)v)*i);
         
-        /* fill in integer part */
-        sprintf(str, "%i.", intPart);
+        /* fill in inteer part */
+        sprintf(str, "%i.", (int)v);
         
         /* prepare fill in of fractional part */
-        len = strlen(str);
-        ptr = &str[len];
+        ptr = str+strlen(str);
         
         /* fill in leading fractional zeros */
-        for (i/=10;i>1; i/=10, ptr++) {
-            if (fractPart >= i) {
-                break;
-            }
-            *ptr = '0';
-        }
+        while((i/=10) > 1)
+            if (fractPart < i)
+                *ptr = '0';
         
         /* fill in (rest of) fractional part */
         sprintf(ptr, "%i", fractPart);
         
         return str;
-    }
-
+    } 
 
     //calcola la velocità integrando il valore dell'accelerazione, 
     //rispetto solamente al tempo trascorso per effettuare la misura
