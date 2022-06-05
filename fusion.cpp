@@ -46,7 +46,7 @@
 
     //calcola il disturbo sulla base dell'angolo d'inclinazione
     double calcola_disturbo(float acc){
-        return sqrt(1-pow(acc, 2));
+        return acc*sqrt(1-pow(acc, 2));
     }
 
 
