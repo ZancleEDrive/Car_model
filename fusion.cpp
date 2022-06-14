@@ -152,22 +152,9 @@
 
     }
 
-    //calcola la rotta (direzione rispetto al nord magnetico)
-    float angolo_direzione(int Hx, int Hy){
-        float result;
-        if(Hy>0){
-            result=90-atan2(Hx,Hy)*180/PI;
-        }
-        else if (Hy<0){
-            result= 270- atan2(Hx, Hy)*180/PI;
-        }
-        else if(Hy==0 && Hx<0){
-            result=180.0;
-        }
-        else if(Hy==0 && Hx >0){
-            result=0.0;
-        }
-        return result-declinazione_magnetica;
+    //integra la velocità angolare
+    float calcola_angolo(int vel_ang,float tempo){
+      return ((float)vel_ang*0.008)*(tempo/1000);
     }
 
    
